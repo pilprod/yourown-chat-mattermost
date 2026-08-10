@@ -1,0 +1,8 @@
+[submodule "sources/mattermost"]
+	path = sources/mattermost
+	url = https://github.com/pilprod/mattermost.git
+	shallow = true
+[submodule "sources/web"]
+	path = sources/web
+	url = https://github.com/pilprod/yourown-chat-web.git
+	shallow = true

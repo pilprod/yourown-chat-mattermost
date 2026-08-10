@@ -32,9 +32,25 @@ BUILD_NUMBER=11.9.0-patched-dev \
 ```
 
 The script derives both source revisions from the submodules and records them
-as OCI image labels. `BUILD_DATE`, `BUILD_NUMBER`, and `IMAGE` can be overridden
-by CI. Additional arguments are forwarded to `docker build`.
+as OCI image labels, together with the assembly repository revision.
+`BUILD_DATE`, `BUILD_NUMBER`, and `IMAGE` can be overridden by CI. Additional
+arguments are forwarded to `docker build`.
 
 The final image uses the official Mattermost Team Edition runtime, replaces its
 public server binaries with the patched build, and replaces `/mattermost/client`
 with the standalone YourOwn.Chat web build.
+
+## Release contract
+
+The assembly repository is the release entrypoint. Before a release, update and
+review both submodule pointers; CI refuses to build unless the assembly, server,
+and web sources are all represented by exact 40-character commit SHAs.
+
+- `release-X.Y-patched` branches build preview images and may deploy only to dev.
+- `vX.Y.Z-patched` tags build immutable release images and enter the normal
+  dev-to-production promotion pipeline.
+- The server SHA is the image's Corresponding Source revision. Separate labels
+  retain the exact web and assembly revisions.
+
+`scripts/verify-product-image.sh` verifies the pushed image's labels, public
+Team Edition build metadata, and mandatory license notices before deployment.

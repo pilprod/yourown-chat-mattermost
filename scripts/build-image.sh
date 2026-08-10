@@ -15,6 +15,7 @@ test -f sources/web/web/package.json || {
 
 server_sha=$(git -C sources/mattermost rev-parse HEAD)
 web_sha=$(git -C sources/web rev-parse HEAD)
+assembly_sha=$(git rev-parse HEAD)
 build_date=${BUILD_DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
 build_number=${BUILD_NUMBER:-$(git describe --tags --always --dirty 2>/dev/null || printf 'dev')}
 image=${IMAGE:-yourown-chat-mattermost:latest}
@@ -27,6 +28,10 @@ printf '%s\n' "$web_sha" | grep -Eq '^[0-9a-f]{40}$' || {
     echo "Web submodule is not pinned to a full commit SHA." >&2
     exit 1
 }
+printf '%s\n' "$assembly_sha" | grep -Eq '^[0-9a-f]{40}$' || {
+    echo "Assembly source is not pinned to a full commit SHA." >&2
+    exit 1
+}
 
 docker build \
     --build-arg "BUILD_NUMBER=$build_number" \
@@ -35,6 +40,8 @@ docker build \
     --build-arg "SOURCE_URL=https://github.com/pilprod/mattermost/tree/$server_sha" \
     --build-arg "WEB_BUILD_HASH=$web_sha" \
     --build-arg "WEB_SOURCE_URL=https://github.com/pilprod/yourown-chat-web/tree/$web_sha" \
+    --build-arg "ASSEMBLY_BUILD_HASH=$assembly_sha" \
+    --build-arg "ASSEMBLY_SOURCE_URL=https://github.com/pilprod/yourown-chat-mattermost/tree/$assembly_sha" \
     --tag "$image" \
     "$@" \
     .

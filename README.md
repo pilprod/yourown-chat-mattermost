@@ -27,7 +27,7 @@ web repository.
 
 ```sh
 IMAGE=ghcr.io/pilprod/yourown-chat-mattermost:dev \
-BUILD_NUMBER=11.9.0-patched-dev \
+BUILD_NUMBER=11.9.0-dev.1 \
 ./scripts/build-image.sh
 ```
 
@@ -46,9 +46,12 @@ The assembly repository is the release entrypoint. Before a release, update and
 review both submodule pointers; CI refuses to build unless the assembly, server,
 and web sources are all represented by exact 40-character commit SHAs.
 
-- `release-X.Y-patched` branches build preview images and may deploy only to dev.
-- `vX.Y.Z-patched` tags build immutable release images and enter the normal
-  dev-to-production promotion pipeline.
+- `release-X.Y` branches build commit-addressed preview images and may deploy
+  only to dev.
+- `X.Y.Z-suffix` tags (for example `11.9.0-rc.1`) build immutable prerelease
+  images and may deploy only to dev.
+- Stable `X.Y.Z` tags (for example `11.9.0`) build immutable release images and
+  enter the normal dev-to-production promotion pipeline.
 - The server SHA is the image's Corresponding Source revision. Separate labels
   retain the exact web and assembly revisions.
 

@@ -52,6 +52,8 @@ ARG BUILD_DATE=
 ARG SOURCE_URL
 ARG WEB_BUILD_HASH=dev
 ARG WEB_SOURCE_URL
+ARG ASSEMBLY_BUILD_HASH=dev
+ARG ASSEMBLY_SOURCE_URL
 
 # go.work wires the main module (.) to the embedded public sub-module (./public).
 # This mirrors what `make setup-go-work` does for Team Edition (no enterprise).
@@ -65,6 +67,10 @@ RUN --mount=type=cache,target=/root/go/pkg/mod \
         (echo "FATAL: BUILD_HASH must be a full lowercase Git commit SHA" && exit 1); \
     test "$SOURCE_URL" = "https://github.com/pilprod/mattermost/tree/$BUILD_HASH" || \
         (echo "FATAL: SOURCE_URL must identify the exact BUILD_HASH" && exit 1); \
+    printf '%s\n' "$ASSEMBLY_BUILD_HASH" | grep -Eq '^[0-9a-f]{40}$' || \
+        (echo "FATAL: ASSEMBLY_BUILD_HASH must be a full lowercase Git commit SHA" && exit 1); \
+    test "$ASSEMBLY_SOURCE_URL" = "https://github.com/pilprod/yourown-chat-mattermost/tree/$ASSEMBLY_BUILD_HASH" || \
+        (echo "FATAL: ASSEMBLY_SOURCE_URL must identify the exact ASSEMBLY_BUILD_HASH" && exit 1); \
     MODEL=github.com/mattermost/mattermost/server/public/model; \
     LDFLAGS="-s -w"; \
     LDFLAGS="$LDFLAGS -X $MODEL.BuildNumber=$BUILD_NUMBER"; \
@@ -100,10 +106,12 @@ ARG BUILD_HASH
 ARG BUILD_DATE
 ARG WEB_BUILD_HASH
 ARG WEB_SOURCE_URL
+ARG ASSEMBLY_BUILD_HASH
+ARG ASSEMBLY_SOURCE_URL
 
 LABEL org.opencontainers.image.title="YourOwn.Chat Server" \
       org.opencontainers.image.description="AGPL collaboration server based on Mattermost Team Edition" \
-      org.opencontainers.image.source="https://github.com/pilprod/yourown-chat-mattermost" \
+      org.opencontainers.image.source="${SOURCE_URL}" \
       org.opencontainers.image.url="https://github.com/pilprod/yourown-chat-mattermost" \
       org.opencontainers.image.documentation="https://github.com/pilprod/mattermost/blob/${BUILD_HASH}/docs/product-compliance.md" \
       org.opencontainers.image.revision="${BUILD_HASH}" \
@@ -113,7 +121,9 @@ LABEL org.opencontainers.image.title="YourOwn.Chat Server" \
       io.yourown.chat.server.source="${SOURCE_URL}" \
       io.yourown.chat.server.revision="${BUILD_HASH}" \
       io.yourown.chat.web.source="${WEB_SOURCE_URL}" \
-      io.yourown.chat.web.revision="${WEB_BUILD_HASH}"
+      io.yourown.chat.web.revision="${WEB_BUILD_HASH}" \
+      io.yourown.chat.assembly.source="${ASSEMBLY_SOURCE_URL}" \
+      io.yourown.chat.assembly.revision="${ASSEMBLY_BUILD_HASH}"
 
 USER root
 

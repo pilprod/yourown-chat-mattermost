@@ -92,6 +92,14 @@ RUN go version /out/mattermost | grep -q 'go1\.26\.5' \
 RUN go version /out/mmctl | grep -q 'go1\.26\.5' \
     || (echo "FATAL: mmctl not built with Go 1.26.5" && exit 1)
 
+# The upstream runtime is distroless and intentionally has no /bin/sh. Build a
+# single-purpose static helper for the one filesystem mutation needed before
+# the standalone web client is copied into the final image.
+COPY tools/clean-client/main.go /tmp/clean-client.go
+RUN CGO_ENABLED=0 GOOS=linux \
+    go build -buildvcs=false -trimpath -ldflags="-s -w" \
+    -o /out/clean-client /tmp/clean-client.go
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 3 — final image
@@ -129,7 +137,10 @@ USER root
 
 # COPY merges directories. Empty the upstream client first so stale hashed
 # assets from the base image cannot survive beside the standalone web build.
-RUN find /mattermost/client -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+# The static helper removes itself while running, so it is absent from the
+# resulting layer and the distroless runtime remains shell-free.
+COPY --from=server-builder /out/clean-client /tmp/clean-client
+RUN ["/tmp/clean-client", "/mattermost/client"]
 
 # The upstream Team image used for the patched 11.9 build does not contain the
 # Calls bundle. Keep the test-only delivery deterministic by prepackaging the

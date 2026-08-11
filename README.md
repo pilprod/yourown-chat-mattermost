@@ -23,6 +23,18 @@ The initialization script uses sparse checkouts: only `server/` and license
 files are materialized from Mattermost, and only `web/` is materialized from the
 web repository.
 
+CI initializes the sources separately:
+
+```sh
+./scripts/init-sources.sh mattermost
+# Provide the short-lived, repository-scoped credential only to this command.
+./scripts/init-sources.sh web
+```
+
+This keeps the private web credential out of the public Mattermost submodule
+process. Calling the script without an argument remains the authenticated local
+development shortcut that initializes both pinned sources.
+
 ## Build
 
 ```sh

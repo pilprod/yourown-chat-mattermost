@@ -34,10 +34,9 @@ RUN npm run build
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2 — server binary (Go)
 # ─────────────────────────────────────────────────────────────────────────────
-# Pinned to 1.26.5: ships the patched stdlib for CVE-2026-39822 and
-# CVE-2026-42505, on top of the earlier CVE-2026-42504 (mime),
-# CVE-2026-27145 (crypto/x509) and CVE-2026-42507 (net/textproto) fixes.
-FROM golang:1.26.5-alpine AS server-builder
+# Pinned to 1.26.6: ships the fixes required by the release vulnerability
+# gate, including CVE-2026-39821 and the 2026-5685x/5686x stdlib advisories.
+FROM golang:1.26.6-alpine AS server-builder
 
 WORKDIR /src/server
 COPY sources/server/ .
@@ -87,10 +86,10 @@ RUN --mount=type=cache,target=/root/go/pkg/mod \
         -o /out/mmctl ./cmd/mmctl
 
 # Fail the build if either binary was not compiled with the patched toolchain.
-RUN go version /out/mattermost | grep -q 'go1\.26\.5' \
-    || (echo "FATAL: mattermost not built with Go 1.26.5" && exit 1)
-RUN go version /out/mmctl | grep -q 'go1\.26\.5' \
-    || (echo "FATAL: mmctl not built with Go 1.26.5" && exit 1)
+RUN go version /out/mattermost | grep -q 'go1\.26\.6' \
+    || (echo "FATAL: mattermost not built with Go 1.26.6" && exit 1)
+RUN go version /out/mmctl | grep -q 'go1\.26\.6' \
+    || (echo "FATAL: mmctl not built with Go 1.26.6" && exit 1)
 
 # The upstream runtime is distroless and intentionally has no /bin/sh. Build a
 # single-purpose static helper for the one filesystem mutation needed before

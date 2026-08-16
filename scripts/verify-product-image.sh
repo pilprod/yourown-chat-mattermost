@@ -56,7 +56,10 @@ container=$(docker create "$image")
 trap 'docker rm -f "$container" >/dev/null 2>&1 || true; rm -rf "$tmp_dir"' EXIT HUP INT TERM
 docker cp "$container:/mattermost/bin/mattermost" "$tmp_dir/mattermost"
 docker cp "$container:/mattermost/licenses" "$tmp_dir/licenses"
-docker cp -a "$container:/mattermost/client/plugins" "$tmp_dir/client-plugins"
+# docker cp creates the top-level destination directory as the invoking host
+# user even in archive mode. Copy the parent so plugins remains a nested entry
+# whose UID/GID and mode come from the image rather than from Cloud Build.
+docker cp -a "$container:/mattermost/client" "$tmp_dir/client"
 docker rm "$container" >/dev/null
 container=
 
@@ -71,12 +74,12 @@ test -s "$tmp_dir/licenses/PRODUCT-NOTICE.md"
 grep -F "GNU Affero General Public License" "$tmp_dir/licenses/LICENSE.txt" >/dev/null
 grep -F "YourOwn.Chat Server modification notice" "$tmp_dir/licenses/PRODUCT-NOTICE.md" >/dev/null
 
-plugin_dir_owner=$(stat -c '%u:%g' "$tmp_dir/client-plugins")
+plugin_dir_owner=$(stat -c '%u:%g' "$tmp_dir/client/plugins")
 [ "$plugin_dir_owner" = "2000:2000" ] || {
     echo "plugin webapp directory owner mismatch: expected 2000:2000, got $plugin_dir_owner" >&2
     exit 1
 }
-plugin_dir_mode=$(stat -c '%a' "$tmp_dir/client-plugins")
+plugin_dir_mode=$(stat -c '%a' "$tmp_dir/client/plugins")
 [ "$plugin_dir_mode" = "755" ] || {
     echo "plugin webapp directory mode mismatch: expected 755, got $plugin_dir_mode" >&2
     exit 1

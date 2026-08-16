@@ -1,5 +1,8 @@
 // clean-client removes the upstream web assets from the distroless Mattermost
-// runtime before the pinned YourOwn.Chat client is copied into the image.
+// runtime before the pinned YourOwn.Chat client is copied into the image. It
+// also creates the only runtime-writable part of the client tree: Mattermost
+// installs signed plugin webapp bundles below client/plugins while running as
+// UID/GID 2000.
 package main
 
 import (
@@ -9,6 +12,8 @@ import (
 )
 
 const clientRoot = "/mattermost/client"
+
+const mattermostRuntimeID = 2000
 
 func main() {
 	if len(os.Args) != 2 || os.Args[1] != clientRoot {
@@ -31,6 +36,14 @@ func main() {
 		if err := os.RemoveAll(filepath.Join(clientRoot, entry.Name())); err != nil {
 			fatalf("remove %q: %v", entry.Name(), err)
 		}
+	}
+
+	pluginRoot := filepath.Join(clientRoot, "plugins")
+	if err := os.Mkdir(pluginRoot, 0o755); err != nil {
+		fatalf("create plugin webapp root: %v", err)
+	}
+	if err := os.Chown(pluginRoot, mattermostRuntimeID, mattermostRuntimeID); err != nil {
+		fatalf("set plugin webapp root ownership: %v", err)
 	}
 
 	// The helper is build-time-only and must not survive in the final image.

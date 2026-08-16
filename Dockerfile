@@ -136,8 +136,9 @@ USER root
 
 # COPY merges directories. Empty the upstream client first so stale hashed
 # assets from the base image cannot survive beside the standalone web build.
-# The static helper removes itself while running, so it is absent from the
-# resulting layer and the distroless runtime remains shell-free.
+# The helper also prepares /mattermost/client/plugins for signed plugin webapp
+# bundles written by Mattermost as UID/GID 2000. It removes itself while
+# running, so the distroless runtime remains shell-free.
 COPY --from=server-builder /out/clean-client /tmp/clean-client
 RUN ["/tmp/clean-client", "/mattermost/client"]
 

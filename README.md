@@ -62,8 +62,8 @@ and web sources are all represented by exact 40-character commit SHAs.
 Submodules never follow a moving branch during a build. Their optional branch
 is only a maintainer hint; the committed gitlink is the release input. Update
 `.sources/mattermost` from the reviewed `release-X.Y-patched` line and
-`.sources/web` from reviewed `release-X.Y`, commit both gitlink changes to the
-matching assembly release line, and only then create the assembly tag.
+`.sources/web` from the reviewed `X.Y.Z` line, commit both gitlink changes to
+the matching `X.Y.Z` assembly line, and only then create the assembly tag.
 
 Every release has one product version across all three repositories. An
 assembly tag `X.Y.Z[-suffix]` requires the web gitlink to carry the exact same
@@ -71,7 +71,7 @@ assembly tag `X.Y.Z[-suffix]` requires the web gitlink to carry the exact same
 `vX.Y.Z[-suffix]-patched`. Cloud Build resolves those tags and rejects a build
 when either tag points at a different commit.
 
-- `release-X.Y` branches build commit-addressed preview images and may deploy
+- `X.Y.Z` branches build commit-addressed preview images and may deploy
   only to dev.
 - `X.Y.Z-suffix` tags (for example `11.10.0-rc.1`) build immutable prerelease
   images and may deploy only to dev.

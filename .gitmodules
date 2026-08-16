@@ -6,5 +6,5 @@
 [submodule ".sources/web"]
 	path = .sources/web
 	url = https://github.com/pilprod/yourown-chat-web.git
-	branch = release-11.10
+	branch = 11.10.0
 	shallow = true

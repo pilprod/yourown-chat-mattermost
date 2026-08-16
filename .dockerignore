@@ -8,7 +8,4 @@
 
 # YourOwn.Chat product builds must not receive Mattermost source-available
 # packages in their Docker build context.
-sources/mattermost/server/enterprise
-
-# Only the standalone client is consumed from the web source.
-sources/web/upstream
+sources/server/enterprise

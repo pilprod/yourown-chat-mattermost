@@ -4,17 +4,17 @@ set -eu
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repo_root"
 
-test -f sources/mattermost/server/go.mod || {
+test -f sources/server/go.mod || {
     echo "Sources are not initialized. Run ./scripts/init-sources.sh first." >&2
     exit 1
 }
-test -f sources/web/web/package.json || {
+test -f sources/web/package.json || {
     echo "Web source is not initialized. Run ./scripts/init-sources.sh first." >&2
     exit 1
 }
 
-server_sha=$(git -C sources/mattermost rev-parse HEAD)
-web_sha=$(git -C sources/web rev-parse HEAD)
+server_sha=$(git -C .sources/mattermost rev-parse HEAD)
+web_sha=$(git -C .sources/web rev-parse HEAD)
 assembly_sha=$(git rev-parse HEAD)
 build_date=${BUILD_DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
 build_number=${BUILD_NUMBER:-$(git describe --tags --always --dirty 2>/dev/null || printf 'dev')}

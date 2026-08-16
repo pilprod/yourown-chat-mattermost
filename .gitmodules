@@ -1,8 +1,10 @@
-[submodule "sources/mattermost"]
-	path = sources/mattermost
+[submodule ".sources/mattermost"]
+	path = .sources/mattermost
 	url = https://github.com/pilprod/mattermost.git
+	branch = release-11.10-patched
 	shallow = true
-[submodule "sources/web"]
-	path = sources/web
+[submodule ".sources/web"]
+	path = .sources/web
 	url = https://github.com/pilprod/yourown-chat-web.git
+	branch = release-11.10
 	shallow = true

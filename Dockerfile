@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.6
 # Assembles the AGPL-covered YourOwn.Chat image from two immutable sources:
-#   sources/mattermost — patched public Mattermost server fork
-#   sources/web        — standalone YourOwn.Chat web client
+#   sources/server — exported patched Mattermost server tree
+#   sources/web    — exported standalone YourOwn.Chat web tree
 # This product build must never use the `enterprise` or `sourceavailable` tags.
 # Context: the root of yourown-chat-mattermost.
 # Usage:
@@ -18,7 +18,7 @@ ARG WEB_SOURCE_URL
 WORKDIR /src/webapp
 
 # Copy all sources first — postinstall needs workspace dirs (platform/*) to exist.
-COPY sources/web/web/ .
+COPY sources/web/ .
 RUN test -n "$WEB_SOURCE_URL" || \
         (echo "FATAL: WEB_SOURCE_URL must identify the immutable web source" && exit 1); \
     printf '%s\n' "$WEB_BUILD_HASH" | grep -Eq '^[0-9a-f]{40}$' || \
@@ -40,10 +40,10 @@ RUN npm run build
 FROM golang:1.26.5-alpine AS server-builder
 
 WORKDIR /src/server
-COPY sources/mattermost/server/ .
+COPY sources/server/ .
 
 # Build metadata injected from CI.
-# BUILD_NUMBER  = git tag name (e.g. v11.8.1-patched)
+# BUILD_NUMBER  = assembly tag name (e.g. 11.10.0-rc.1)
 # BUILD_HASH    = full 40-char git commit SHA
 # BUILD_DATE    = UTC ISO-8601 build timestamp
 ARG BUILD_NUMBER=0
@@ -106,7 +106,7 @@ RUN CGO_ENABLED=0 GOOS=linux \
 # The official image already has the correct directory layout, plugins,
 # i18n files, etc.  We only replace the binary and the webapp assets.
 # ─────────────────────────────────────────────────────────────────────────────
-FROM mattermost/mattermost-team-edition:11.9 AS runtime
+FROM mattermost/mattermost-team-edition:11.10 AS runtime
 
 ARG SOURCE_URL
 ARG BUILD_NUMBER
@@ -142,18 +142,18 @@ USER root
 COPY --from=server-builder /out/clean-client /tmp/clean-client
 RUN ["/tmp/clean-client", "/mattermost/client"]
 
-# The upstream Team image used for the patched 11.9 build does not contain the
+# The upstream Team image used for the patched 11.10 build does not contain the
 # Calls bundle. Keep the test-only delivery deterministic by prepackaging the
 # official, signed linux/amd64 bundle instead of enabling plugin uploads or
 # downloading code at runtime. Mattermost verifies the adjacent signature when
 # its signature policy is enabled and honours its own edition/license behaviour;
 # this image does not modify, suppress, or bypass those checks.
 #
-# Calls v1.12.1 was the current stable bundle when Mattermost 11.9.0 was cut.
+# Mattermost 11.10 pins Calls v1.12.2 in its server Makefile.
 # The checksum pins the release asset independently of mutable GitHub URLs.
-ARG CALLS_PLUGIN_VERSION=v1.12.1
-ARG CALLS_PLUGIN_SHA256=23b7ed5cde46d931c290b97a514224956a0fe3ce4fa2a9ef9c6990e5e150e863
-ARG CALLS_PLUGIN_SIGNATURE_SHA256=f627b9b47bdd5faad0425cdf55e7e34f0bee34557e2a6d162160e512d7d5fda1
+ARG CALLS_PLUGIN_VERSION=v1.12.2
+ARG CALLS_PLUGIN_SHA256=f9e2f566467b11dd982c9d0efa971fe061f2d4ae018d169db2f794ae54348eea
+ARG CALLS_PLUGIN_SIGNATURE_SHA256=ebf4cf243c9f9ee2631a4d68f9e2bdd8f73ec808252627b5cd73525b7aead9b6
 ADD --checksum=sha256:${CALLS_PLUGIN_SHA256} --chown=2000:2000 \
   https://github.com/mattermost/mattermost-plugin-calls/releases/download/${CALLS_PLUGIN_VERSION}/mattermost-plugin-calls-${CALLS_PLUGIN_VERSION}-linux-amd64.tar.gz \
   /mattermost/prepackaged_plugins/mattermost-plugin-calls-${CALLS_PLUGIN_VERSION}-linux-amd64.tar.gz
@@ -174,9 +174,9 @@ COPY --from=webapp-builder --chown=2000:2000 \
 
 # Keep upstream attribution and the fork modification notice in every image.
 COPY --chown=2000:2000 \
-    sources/mattermost/LICENSE.txt \
-    sources/mattermost/NOTICE.txt \
-    sources/mattermost/PRODUCT-NOTICE.md \
+    sources/server/LICENSE.txt \
+    sources/server/NOTICE.txt \
+    sources/server/PRODUCT-NOTICE.md \
     /mattermost/licenses/
 
 USER 2000

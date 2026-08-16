@@ -1,8 +1,6 @@
-// clean-client removes the upstream web assets from the distroless Mattermost
-// runtime before the pinned YourOwn.Chat client is copied into the image. It
-// also creates the only runtime-writable part of the client tree: Mattermost
-// installs signed plugin webapp bundles below client/plugins while running as
-// UID/GID 2000.
+// clean-client prepares the distroless Mattermost client tree. The clean mode
+// removes upstream web assets before the pinned YourOwn.Chat client is copied;
+// the finalize mode repairs the only runtime-writable part after that copy.
 package main
 
 import (
@@ -16,8 +14,8 @@ const clientRoot = "/mattermost/client"
 const mattermostRuntimeID = 2000
 
 func main() {
-	if len(os.Args) != 2 || os.Args[1] != clientRoot {
-		fatalf("expected exactly %q", clientRoot)
+	if len(os.Args) != 3 || os.Args[1] != clientRoot {
+		fatalf("expected %q followed by clean or finalize", clientRoot)
 	}
 
 	info, err := os.Lstat(clientRoot)
@@ -28,19 +26,28 @@ func main() {
 		fatalf("client root is not a real directory")
 	}
 
-	entries, err := os.ReadDir(clientRoot)
-	if err != nil {
-		fatalf("read client root: %v", err)
-	}
-	for _, entry := range entries {
-		if err := os.RemoveAll(filepath.Join(clientRoot, entry.Name())); err != nil {
-			fatalf("remove %q: %v", entry.Name(), err)
+	switch os.Args[2] {
+	case "clean":
+		entries, err := os.ReadDir(clientRoot)
+		if err != nil {
+			fatalf("read client root: %v", err)
 		}
+		for _, entry := range entries {
+			if err := os.RemoveAll(filepath.Join(clientRoot, entry.Name())); err != nil {
+				fatalf("remove %q: %v", entry.Name(), err)
+			}
+		}
+	case "finalize":
+	default:
+		fatalf("unknown operation %q", os.Args[2])
 	}
 
 	pluginRoot := filepath.Join(clientRoot, "plugins")
-	if err := os.Mkdir(pluginRoot, 0o755); err != nil {
+	if err := os.MkdirAll(pluginRoot, 0o755); err != nil {
 		fatalf("create plugin webapp root: %v", err)
+	}
+	if err := os.Chmod(pluginRoot, 0o755); err != nil {
+		fatalf("set plugin webapp root mode: %v", err)
 	}
 	if err := os.Chown(pluginRoot, mattermostRuntimeID, mattermostRuntimeID); err != nil {
 		fatalf("set plugin webapp root ownership: %v", err)

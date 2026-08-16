@@ -136,11 +136,10 @@ USER root
 
 # COPY merges directories. Empty the upstream client first so stale hashed
 # assets from the base image cannot survive beside the standalone web build.
-# The helper also prepares /mattermost/client/plugins for signed plugin webapp
-# bundles written by Mattermost as UID/GID 2000. It removes itself while
-# running, so the distroless runtime remains shell-free.
+# The helper removes itself while running, so the distroless runtime remains
+# shell-free.
 COPY --from=server-builder /out/clean-client /tmp/clean-client
-RUN ["/tmp/clean-client", "/mattermost/client"]
+RUN ["/tmp/clean-client", "/mattermost/client", "clean"]
 
 # The upstream Team image used for the patched 11.10 build does not contain the
 # Calls bundle. Keep the test-only delivery deterministic by prepackaging the
@@ -171,6 +170,12 @@ COPY --from=server-builder --chown=2000:2000 \
 # The official image serves static files from /mattermost/client/.
 COPY --from=webapp-builder --chown=2000:2000 \
     /src/webapp/channels/dist/ /mattermost/client/
+
+# The web output contains the plugins directory and can replace its metadata
+# while Docker merges the client tree. Normalize it after every client copy so
+# Mattermost (UID/GID 2000) can install signed plugin webapp bundles at runtime.
+COPY --from=server-builder /out/clean-client /tmp/clean-client
+RUN ["/tmp/clean-client", "/mattermost/client", "finalize"]
 
 # Keep upstream attribution and the fork modification notice in every image.
 COPY --chown=2000:2000 \
